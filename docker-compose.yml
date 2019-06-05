@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+  # Telegraf service
+  telegraf:
+    image: telegraf:latest
+    volumes:
+      - ./etc/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - your_nginx_logs_folder:/opt/logs/nginx
+    links:
+      - influxdb
+    ports:
+      - "8092:8092/udp"
+      - "8094:8094"
+      - "8125:8125/udp"
+  
+  # InfluxDB service
+  influxdb:
+    image: influxdb:latest
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb
+    ports:
+      - "8086:8086"
+      
+  # Chronograf service
+  chronograf:
+    image: chronograf:latest
+    environment:
+      INFLUXDB_URL: http://influxdb:8086
+      KAPACITOR_URL: http://kapacitor:9092
+      
+      # This lines below are only needed for Google OAuth
+      # TOKEN_SECRET: YOUR_TOKEN_SECRET
+      # GOOGLE_CLIENT_ID: YOUR_GOOGLE_CLIENT_ID
+      # GOOGLE_CLIENT_SECRET: YOUR_GOOGLE_CLIENT_SECRET
+      # PUBLIC_URL: YOUR_ACCESS_URL
+    ports:
+      - "8888:8888"
+    links:
+      - influxdb
+      - kapacitor
+      
+  # Kapacitor service
+  kapacitor:
+    image: kapacitor:latest
+    environment:
+      KAPACITOR_HOSTNAME: kapacitor
+      KAPACITOR_INFLUXDB_0_URLS_0: http://influxdb:8086
+    links:
+      - influxdb
+    ports:
+      - "9092:9092"
+      
+  # Service for using the influx CLI tool.
+  # docker-compose run influxdb-cli
+  influxdb-cli:
+    image: influxdb:latest
+    entrypoint:
+      - influx
+      - -host
+      - influxdb
+    links:
+      - influxdb
+      
+  # Service for using the kapacitor CLI tool.
+  # docker-compose run kapacitor-cli
+  kapacitor-cli:
+    image: kapacitor:latest
+    entrypoint: bash
+    environment:
+      KAPACITOR_URL: http://kapacitor:9092
+    links:
+      - kapacitor
