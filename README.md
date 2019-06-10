@@ -48,4 +48,5 @@ After the setup, run `docker-compose up -d` and the full stack will be running i
 
 ## References
 [InfluxData / TICK-docker](https://github.com/influxdata/TICK-docker)
+
 [Infrastructure Monitoring with TICK Stack](https://blog.codeship.com/infrastructure-monitoring-with-tick-stack/)
